@@ -44,6 +44,10 @@
   .search input::placeholder{color:var(--muted)}
   .search input:focus{border-color:var(--accent)}
   .no-results{grid-column:1/-1;text-align:center;color:var(--muted);padding:40px 10px}
+  .filters{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin:-14px 0 30px}
+  .filters button{background:var(--panel);border:1px solid var(--line);color:var(--muted);font-size:13px;font-weight:500;padding:8px 16px;border-radius:30px;cursor:pointer;transition:.2s;font-family:inherit}
+  .filters button:hover{border-color:var(--accent);color:var(--accent2)}
+  .filters button.active{background:var(--accent2);color:#111;border-color:var(--accent2)}
 
   /* ---------- hero ---------- */
   .hero{position:relative;min-height:460px;display:flex;align-items:center;overflow:hidden}
@@ -90,6 +94,31 @@
   .price .now{font-size:21px;font-weight:700;color:var(--txt)}
   .add{margin-top:10px;width:100%;justify-content:center;background:transparent;border:1px solid var(--line);color:var(--accent2);font-weight:600;padding:11px;border-radius:10px;cursor:pointer;display:flex;align-items:center;gap:8px;transition:.2s}
   .add:hover{background:var(--accent2);color:#111;border-color:var(--accent2)}
+  .card{cursor:pointer}
+  .price .old{font-size:13px;color:var(--muted);text-decoration:line-through;margin-left:8px}
+  .ph .tag{position:absolute;top:10px;left:10px;z-index:2;background:var(--accent2);color:#111;font-size:11px;font-weight:700;padding:3px 9px;border-radius:20px}
+  .ph .shots{position:absolute;top:10px;right:10px;z-index:2;background:rgba(9,9,11,.75);color:var(--accent2);font-size:11px;font-weight:600;padding:3px 8px;border-radius:20px;border:1px solid var(--line)}
+
+  /* product detail */
+  .detail{display:grid;grid-template-columns:1fr 1fr;gap:26px}
+  .gallery .gmain{border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--panel2);aspect-ratio:1/1}
+  .gallery .gmain img{width:100%;height:100%;object-fit:cover}
+  .gallery .thumbs{display:flex;gap:10px;margin-top:12px}
+  .gallery .thumb{width:64px;height:64px;border:1px solid var(--line);border-radius:9px;overflow:hidden;cursor:pointer;opacity:.6;transition:.2s}
+  .gallery .thumb.sel{border-color:var(--accent2);opacity:1}
+  .gallery .thumb:hover{opacity:1}
+  .gallery .thumb img{width:100%;height:100%;object-fit:cover}
+  .dinfo .brand{font-size:12px;letter-spacing:1px;text-transform:uppercase;color:var(--muted)}
+  .dinfo h3{font-size:24px;margin:6px 0 12px;line-height:1.25}
+  .dinfo .price{margin:0 0 16px}
+  .dinfo .price .now{font-size:26px;font-weight:700}
+  .ddesc{color:#c9c9d0;font-size:14.5px;margin-bottom:18px}
+  .specs{list-style:none;margin:0 0 20px;padding:0;display:flex;flex-direction:column;gap:8px}
+  .specs li{position:relative;padding-left:22px;font-size:14px;color:var(--txt)}
+  .specs li::before{content:"✓";position:absolute;left:0;color:var(--accent2);font-weight:700}
+  .dactions{display:flex;gap:12px}
+  .dnote{margin-top:14px;font-size:12px;color:var(--muted)}
+  @media(max-width:640px){.detail{grid-template-columns:1fr}}
 
   /* testimonials */
   .quotes{display:grid;grid-template-columns:repeat(2,1fr);gap:20px;max-width:860px;margin:0 auto}
@@ -257,8 +286,9 @@
 <section id="destaques" style="padding-top:0">
   <div class="wrap">
     <div class="shead">
-      <h2 class="serif">Instrumentos em destaque</h2>
+      <h2 class="serif">Nossa loja</h2>
     </div>
+    <div class="filters" id="filters"></div>
     <div class="grid" id="productGrid"></div>
   </div>
 </section>
@@ -340,16 +370,87 @@
   </div>
 </div>
 
+<!-- product detail modal -->
+<div class="modal" id="detailModal">
+  <div class="modal-bg" id="detailBg"></div>
+  <div class="modal-card" style="max-width:760px">
+    <div class="modal-head">
+      <h3>Detalhes do produto</h3>
+      <button class="close" id="closeDetail">×</button>
+    </div>
+    <div class="modal-body" id="detailBody"></div>
+  </div>
+</div>
+
 <script>
 const products=[
-  {id:1,brand:"Fender",name:"Guitarra Stratocaster Player Series",img:"img/guitarra-eletrica.jpg",price:6490},
-  {id:2,brand:"Tagima",name:"Violão Clássico Nylon Acústico",img:"img/violao.jpg",price:899},
-  {id:3,brand:"Yamaha",name:"Piano Digital Clavinova 88 teclas",img:"img/teclado.jpg",price:4299},
-  {id:4,brand:"Pearl",name:"Bateria Acústica Completa 5 peças",img:"img/bateria.jpg",price:5890},
-  {id:5,brand:"Yamaha",name:"Saxofone Alto Profissional",img:"img/saxofone.jpg",price:7990},
-  {id:6,brand:"Fender",name:"Contrabaixo Jazz Bass 4 cordas",img:"img/contrabaixo.jpg",price:4590},
-  {id:7,brand:"Eagle",name:"Violino 4/4 com Estojo e Arco",img:"img/violino.jpg",price:1290},
-  {id:8,brand:"Boss",name:"Pedalboard com 6 Pedais de Efeito",img:"img/pedais.jpg",price:3290}
+  // ---------- instrumentos (faixa alta/média) ----------
+  {id:1,cat:"Cordas",brand:"Fender",name:"Guitarra Stratocaster Player Series",price:6490,oldPrice:7290,
+    images:["img/guitarra-strat.jpg"],
+    desc:"A clássica Stratocaster que definiu o som de gerações. Corpo em alder, braço em maple com escala moderna de 22 trastes e três captadores single-coil Alnico 5 que entregam o brilho e a dinâmica característicos da Fender. Ideal do blues ao rock, com ponte tremolo de 2 pontos para vibratos expressivos.",
+    specs:["Corpo: Alder","Braço: Maple, 22 trastes","Captadores: 3× Single-coil Alnico 5","Ponte: Tremolo 2 pontos","Acompanha: capa e certificado"]},
+  {id:2,cat:"Cordas",brand:"Tagima",name:"Violão Clássico Nylon Acústico",price:899,
+    images:["img/violao.jpg"],
+    desc:"Violão clássico de cordas de nylon com tampo em spruce e corpo em mogno, perfeito para quem está começando ou para o músico que busca um timbre quente e encorpado. Acabamento acetinado, braço confortável e afinação estável — excelente custo-benefício.",
+    specs:["Tampo: Spruce","Corpo: Mogno","Cordas: Nylon","Escala: 650 mm","Indicado para: iniciantes e intermediários"]},
+  {id:3,cat:"Teclas",brand:"Yamaha",name:"Piano Digital Clavinova 88 teclas",price:4299,
+    images:["img/piano-clavinova.jpg"],
+    desc:"Piano digital com 88 teclas de ação martelo (GHS) que reproduzem o peso de um piano acústico. Amostras do lendário piano de cauda Yamaha CFX, 10 vozes, polifonia de 192 notas e saída USB para gravação. Som e toque de concerto na sua casa ou no palco.",
+    specs:["Teclas: 88 (ação martelo GHS)","Polifonia: 192 notas","Vozes: 10 instrumentos","Conexões: USB, 2 fones, sustain","Amostra: Yamaha CFX"]},
+  {id:4,cat:"Percussão",brand:"Pearl",name:"Bateria Acústica Completa 5 peças",price:5890,oldPrice:6490,
+    images:["img/bateria-kit.jpg"],
+    desc:"Kit completo de 5 peças da Pearl: bumbo, caixa, dois toms e surdo, com cascos em bétula/álamo que entregam ataque definido e sustain equilibrado. Acompanha ferragens, pedal de bumbo e banco. Pronta para o estúdio ou o palco.",
+    specs:["Peças: Bumbo, caixa, 2 toms, surdo","Cascos: Bétula/álamo","Inclui: ferragens + pedal + banco","Pratos: vendidos à parte","Acabamento: wrap premium"]},
+  {id:5,cat:"Sopros",brand:"Yamaha",name:"Saxofone Alto Profissional",price:7990,
+    images:["img/saxofone.jpg"],
+    desc:"Saxofone alto em Mib com corpo em latão e acabamento dourado laqueado. Mecânica precisa, chaves ergonômicas e resposta rápida em todos os registros. Acompanha boquilha, palhetas, correia e estojo rígido. Projeção e afinação de nível profissional.",
+    specs:["Tom: Mib (alto)","Corpo: Latão laqueado","Chaves: Dó agudo e Fá# frontal","Inclui: boquilha, palhetas, estojo","Acabamento: Dourado"]},
+  {id:6,cat:"Cordas",brand:"Fender",name:"Contrabaixo Jazz Bass 4 cordas",price:4590,
+    images:["img/contrabaixo.jpg"],
+    desc:"O Jazz Bass de 4 cordas, referência em versatilidade. Dois captadores single-coil que vão do funk ao jazz ao rock, braço fino de perfil confortável e corpo leve. Graves redondos e agudos articulados — o baixo mais gravado da história.",
+    specs:["Cordas: 4","Captadores: 2× Single-coil J","Braço: Maple, perfil fino","Corpo: Alder","Ponte: Vintage 4 selas"]},
+  {id:7,cat:"Cordas",brand:"Eagle",name:"Violino 4/4 com Estojo e Arco",price:1290,
+    images:["img/violino.jpg"],
+    desc:"Violino tamanho 4/4 em madeira maciça com tampo em spruce e fundo em maple. Kit completo para estudo e apresentações: acompanha estojo térmico, arco em madeira com crina natural e breu. Som claro e afinação estável.",
+    specs:["Tamanho: 4/4 (adulto)","Tampo: Spruce maciço","Fundo: Maple","Inclui: estojo, arco e breu","Cravelhas: Ébano"]},
+  {id:8,cat:"Acessórios",brand:"Boss",name:"Pedalboard com 6 Pedais de Efeito",price:3290,
+    images:["img/pedais.jpg"],
+    desc:"Pedalboard montada com 6 pedais Boss essenciais — overdrive, distortion, delay, reverb, chorus e afinador — já cabeada e com fonte. Base rígida com fixação em velcro e bag de transporte. Chegue no ensaio e é só plugar.",
+    specs:["Pedais: 6 (OD, DS, DD, RV, CE, TU)","Base: rígida com velcro","Fonte: inclusa (multi-saída)","Inclui: cabos patch + bag","Marca: Boss / Roland"]},
+
+  // ---------- acessórios (faixa barata) ----------
+  {id:9,cat:"Acessórios",brand:"D'Addario",name:"Jogo de Cordas para Violão Aço",price:39,oldPrice:49,
+    images:["img/cordas.jpg"],
+    desc:"Jogo de 6 cordas de aço com revestimento anticorrosão que prolonga a vida útil e mantém o brilho por mais tempo. Tensão média (.012-.053), afinação estável e timbre equilibrado. A troca que todo violonista precisa ter de reserva.",
+    specs:["Material: Aço revestido","Calibre: .012–.053 (média)","Para: Violão folk/aço","Durabilidade: até 4× maior","Unidade: 1 jogo (6 cordas)"]},
+  {id:10,cat:"Acessórios",brand:"Dunlop",name:"Kit 12 Palhetas Sortidas",price:19,
+    images:["img/palhetas.jpg"],
+    desc:"Caixa com 12 palhetas em diferentes espessuras (fina, média e pesada) para você encontrar o ataque perfeito. Material em celuloide com superfície antiderrapante. Essencial no bolso de todo guitarrista e baixista.",
+    specs:["Quantidade: 12 palhetas","Espessuras: 0,46 a 1,14 mm","Material: Celuloide","Textura: Antiderrapante","Para: Guitarra, violão e baixo"]},
+  {id:11,cat:"Acessórios",brand:"Korg",name:"Afinador Clip-On Cromático",price:89,oldPrice:119,
+    images:["img/afinador.jpg"],
+    desc:"Afinador de clipe cromático com visor colorido de alta resposta que capta a vibração direto do instrumento — funciona em ambientes barulhentos. Serve para violão, guitarra, baixo, violino, ukulele e sopros. Compacto e preciso.",
+    specs:["Tipo: Clip-on cromático","Faixa: A0–C8","Visor: LCD colorido 360°","Serve: cordas e sopros","Bateria: CR2032 (inclusa)"]},
+  {id:12,cat:"Acessórios",brand:"Hercules",name:"Suporte de Chão para Violão/Guitarra",price:149,
+    images:["img/suporte.jpg"],
+    desc:"Suporte de chão com braços dobráveis e trava automática (AGS) que segura o instrumento com firmeza e protege o acabamento com espuma emborrachada. Dobra para transporte. Para violão, guitarra ou baixo.",
+    specs:["Sistema: Trava automática AGS","Apoio: espuma protetora","Dobrável: sim","Suporta: até 7 kg","Base: tripé estável"]},
+  {id:13,cat:"Acessórios",brand:"AKG",name:"Fone de Ouvido de Estúdio",price:349,oldPrice:399,
+    images:["img/fone.jpg"],
+    desc:"Fone over-ear de referência para monitoração e gravação, com resposta de frequência plana e precisa. Conchas confortáveis para longas sessões, cabo removível e adaptador P10. Ouça cada detalhe da sua música como ela realmente é.",
+    specs:["Tipo: Over-ear fechado","Resposta: 16 Hz–22 kHz","Impedância: 55 Ω","Cabo: removível + adaptador P10","Uso: estúdio e teclas"]},
+  {id:14,cat:"Acessórios",brand:"Santo Angelo",name:"Cabo P10 para Instrumento 6m",price:69,
+    images:["img/cabo.png"],
+    desc:"Cabo profissional de 6 metros com conectores P10 banhados e blindagem que elimina ruídos e interferências. Flexível e resistente, com baixa capacitância para preservar o timbre do instrumento até o amplificador.",
+    specs:["Comprimento: 6 m","Conectores: P10 reto/reto","Blindagem: dupla","Baixa capacitância","Garantia: vitalícia (defeito)"]},
+  {id:15,cat:"Acessórios",brand:"Nig",name:"Metrônomo Digital de Mesa",price:119,
+    images:["img/metronomo.jpg"],
+    desc:"Metrônomo digital com faixa de 30 a 250 BPM, compassos ajustáveis, som de clique nítido e saída de fone. Indispensável para desenvolver tempo e precisão — do iniciante ao baterista profissional.",
+    specs:["Faixa: 30–250 BPM","Compassos: 0–9 tempos","Saída: fone + alto-falante","Visor: LCD","Alimentação: pilha/bateria 9V"]},
+  {id:16,cat:"Acessórios",brand:"RMV",name:"Estante de Partitura Dobrável",price:129,oldPrice:159,
+    images:["img/estante.jpg"],
+    desc:"Estante de partitura em metal com altura e inclinação ajustáveis, bandeja larga e pés estáveis. Dobra totalmente e vem com bolsa de transporte — leve para aulas, ensaios e apresentações.",
+    specs:["Material: Metal","Altura: ajustável até 1,50 m","Inclinação: regulável","Dobrável: total","Inclui: bolsa de transporte"]}
 ];
 
 const brl=v=>v.toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
@@ -363,15 +464,20 @@ function renderProducts(list){
     return;
   }
   grid.innerHTML=items.map(p=>`
-    <div class="card">
+    <div class="card" onclick="openDetail(${p.id})">
       <div class="ph">
-        <img src="${p.img}" alt="${p.name}" loading="lazy">
+        ${p.oldPrice?'<span class="tag">Oferta</span>':''}
+        ${p.images.length>1?`<span class="shots">📷 ${p.images.length}</span>`:''}
+        <img src="${p.images[0]}" alt="${p.name}" loading="lazy">
       </div>
       <div class="body">
         <span class="brand">${p.brand}</span>
         <h3>${p.name}</h3>
-        <div class="price"><span class="now">${brl(p.price)}</span></div>
-        <button class="add" onclick="addToCart(${p.id})">🛒 Adicionar</button>
+        <div class="price">
+          <span class="now">${brl(p.price)}</span>
+          ${p.oldPrice?`<span class="old">${brl(p.oldPrice)}</span>`:''}
+        </div>
+        <button class="add" onclick="event.stopPropagation();addToCart(${p.id})">🛒 Adicionar</button>
       </div>
     </div>`).join('');
 }
@@ -379,7 +485,7 @@ function renderProducts(list){
 function addToCart(id){
   const p=products.find(x=>x.id===id);
   const ex=cart.find(x=>x.id===id);
-  if(ex)ex.qty++;else cart.push({...p,qty:1});
+  if(ex)ex.qty++;else cart.push({id:p.id,name:p.name,brand:p.brand,price:p.price,img:p.images[0],qty:1});
   updateCart();showToast(`${p.name.slice(0,22)}… adicionado ✓`);
 }
 function removeFromCart(id){cart=cart.filter(x=>x.id!==id);updateCart();}
@@ -416,6 +522,50 @@ function updateCart(){
 
 function openCart(){document.getElementById('drawer').classList.add('open');document.getElementById('overlay').classList.add('open');}
 function closeCart(){document.getElementById('drawer').classList.remove('open');document.getElementById('overlay').classList.remove('open');}
+
+/* ---------- product detail (modal) ---------- */
+let detailProduct=null, detailImg=0;
+const detailModal=document.getElementById('detailModal');
+const detailBody=document.getElementById('detailBody');
+
+function openDetail(id){
+  detailProduct=products.find(x=>x.id===id);
+  detailImg=0;
+  closeCart();
+  renderDetail();
+  detailModal.classList.add('open');
+}
+function closeDetail(){detailModal.classList.remove('open');}
+function setDetailImg(i){detailImg=i;renderDetail();}
+
+function renderDetail(){
+  const p=detailProduct;
+  detailBody.innerHTML=`
+    <div class="detail">
+      <div class="gallery">
+        <div class="gmain"><img src="${p.images[detailImg]}" alt="${p.name}"></div>
+        ${p.images.length>1?`<div class="thumbs">
+          ${p.images.map((im,i)=>`<div class="thumb ${i===detailImg?'sel':''}" onclick="setDetailImg(${i})"><img src="${im}" alt=""></div>`).join('')}
+        </div>`:''}
+      </div>
+      <div class="dinfo">
+        <span class="brand">${p.brand} · ${p.cat}</span>
+        <h3 class="serif">${p.name}</h3>
+        <div class="price">
+          <span class="now">${brl(p.price)}</span>
+          ${p.oldPrice?`<span class="old">${brl(p.oldPrice)}</span>`:''}
+        </div>
+        <p class="ddesc">${p.desc}</p>
+        <ul class="specs">
+          ${p.specs.map(s=>`<li>${s}</li>`).join('')}
+        </ul>
+        <div class="dactions">
+          <button class="btn btn-accent" style="flex:1;justify-content:center" onclick="addToCart(${p.id});closeDetail();openCart();">🛒 Adicionar ao carrinho</button>
+        </div>
+        <p class="dnote">Produto de demonstração · entrega para todo o Brasil ou retirada na loja · até 12x sem juros.</p>
+      </div>
+    </div>`;
+}
 
 /* ---------- checkout flow (demo) ---------- */
 const FRETE=29.9;
@@ -580,28 +730,55 @@ document.getElementById('closeCart').onclick=closeCart;
 document.getElementById('overlay').onclick=closeCart;
 document.getElementById('closeCheckout').onclick=closeCheckout;
 document.getElementById('checkoutBg').onclick=closeCheckout;
+document.getElementById('closeDetail').onclick=closeDetail;
+document.getElementById('detailBg').onclick=closeDetail;
 
 // busca
 const searchBox=document.getElementById('searchBox');
 const searchInput=document.getElementById('searchInput');
-function runSearch(){
+let activeCat='Tudo';
+
+function currentList(){
   const q=searchInput.value.trim().toLowerCase();
-  const filtered=products.filter(p=>
-    p.name.toLowerCase().includes(q) || p.brand.toLowerCase().includes(q));
-  renderProducts(filtered);
+  return products.filter(p=>{
+    const matchCat = activeCat==='Tudo' || p.cat===activeCat;
+    const matchQ = !q || p.name.toLowerCase().includes(q) || p.brand.toLowerCase().includes(q);
+    return matchCat && matchQ;
+  });
 }
+function applyFilters(){ renderProducts(currentList()); }
+
+function renderFilters(){
+  const cats=['Tudo',...[...new Set(products.map(p=>p.cat))]];
+  const box=document.getElementById('filters');
+  box.innerHTML=cats.map(c=>`<button class="${c===activeCat?'active':''}" data-cat="${c}">${c}</button>`).join('');
+  box.querySelectorAll('button').forEach(b=>b.onclick=()=>{
+    activeCat=b.dataset.cat; renderFilters(); applyFilters();
+  });
+}
+
 document.getElementById('searchBtn').onclick=()=>{
   searchBox.classList.toggle('open');
   if(searchBox.classList.contains('open')){
     searchInput.focus();
     document.getElementById('destaques').scrollIntoView({behavior:'smooth',block:'start'});
   }else{
-    searchInput.value=''; renderProducts();
+    searchInput.value=''; applyFilters();
   }
 };
-searchInput.addEventListener('input',runSearch);
-searchInput.addEventListener('keydown',e=>{ if(e.key==='Escape'){ searchInput.value=''; renderProducts(); searchBox.classList.remove('open'); } });
+searchInput.addEventListener('input',applyFilters);
+searchInput.addEventListener('keydown',e=>{ if(e.key==='Escape'){ searchInput.value=''; applyFilters(); searchBox.classList.remove('open'); } });
 
+// Esc fecha modais/carrinho
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape'){
+    if(detailModal.classList.contains('open')) closeDetail();
+    else if(checkoutModal.classList.contains('open')) closeCheckout();
+    else closeCart();
+  }
+});
+
+renderFilters();
 renderProducts();updateCart();
 </script>
 </body>
